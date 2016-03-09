@@ -9,6 +9,14 @@ require('chai').use(sinonChai);
 
 describe('Testing flow.js', () => {
     describe('Tests for serial function', () => {
+        it('should return error if got not Array of funcs', () => {
+            var callback = sinon.spy();
+
+            flow.serial({}, callback);
+            expect(callback.calledOnce).to.be.true;
+            expect(callback).calledWith('Wrong arguments!');
+        });
+
         it('should call callback at once if got []', () => {
             var callback = sinon.spy();
             flow.serial(([]), callback);
@@ -18,6 +26,7 @@ describe('Testing flow.js', () => {
         it('should return [] if got []', () => {
             flow.serial([], (err, actual) => {
                 actual.should.be.an.instanceOf(Array);
+                actual.length.should.be.an.equal(0);
             });
         });
 
@@ -93,6 +102,14 @@ describe('Testing flow.js', () => {
         });
     });
     describe('Tests for parallel function', function () {
+        it('should return error if got not Array of funcs', () => {
+            var callback = sinon.spy();
+
+            flow.parallel({}, callback);
+            expect(callback.calledOnce).to.be.true;
+            expect(callback).calledWith('Wrong arguments!');
+        });
+
         it('should call callback at once if got []', () => {
             var callback = sinon.spy();
             flow.parallel(([]), callback);
@@ -127,7 +144,7 @@ describe('Testing flow.js', () => {
             });
             var callback = sinon.spy((err, data) => {
                 expect(callback).to.have.been.calledOnce;
-                expect(callback).to.be.calledWith(null, [1, 2]);
+                expect(callback).to.be.calledWith(undefined, [1, 2]);
             });
 
             flow.parallel([func1, func2], callback);
@@ -153,14 +170,75 @@ describe('Testing flow.js', () => {
             expect(func1).to.have.been.calledOnce;
             expect(func2).to.have.been.calledOnce;
         });
+
+        it('should call all functions parallel if limit bigger then count of funcs', () => {
+            var func1 = sinon.spy(cb => {
+                cb(null, 1);
+            });
+            var func2 = sinon.spy(cb => {
+                cb(null, 2);
+            });
+            var callback = sinon.spy((err, data) => {
+                expect(callback).to.have.been.calledOnce;
+                expect(callback).to.be.calledWith(undefined, [1, 2]);
+            });
+
+            flow.parallel([func1, func2], 10, callback);
+            expect(func1).to.have.been.calledOnce;
+            expect(func2).to.have.been.calledOnce;
+        });
+
+        it('should call functions sync if limit equal 1', () => {
+            var func1 = sinon.spy(cb => {
+                cb(null, 1);
+            });
+            var func2 = sinon.spy(cb => {
+                cb(null, 2);
+            });
+            var callback = sinon.spy((err, data) => {
+                expect(callback).to.have.been.calledOnce;
+                expect(callback).to.be.calledWith(undefined, [1, 2]);
+            });
+
+            flow.parallel([func1, func2], 1, callback);
+            expect(func1).to.have.been.calledOnce;
+            expect(func2).to.have.been.calledOnce;
+            expect(func2.calledAfter(func1)).to.be.true;
+        });
+
+        it('should return [] if limit equal 0', () => {
+            var func1 = sinon.spy(cb => {
+                cb(null, 1);
+            });
+            var func2 = sinon.spy(cb => {
+                cb(null, 2);
+            });
+            var callback = sinon.spy((err, data) => {
+                expect(callback).to.have.been.calledOnce;
+                expect(callback).to.be.calledWith(undefined, []);
+            });
+
+            flow.parallel([func1, func2], 0, callback);
+            expect(func1).to.not.have.been.calledOnce;
+            expect(func2).to.not.have.been.calledOnce;
+        });
     });
     describe('Tests for map function', function () {
+        it('should return error if got not Array of funcs', () => {
+            var func = () => {};
+            var callback = sinon.spy();
+
+            flow.map({}, func, callback);
+            expect(callback.calledOnce).to.be.true;
+            expect(callback).calledWith('Wrong arguments!');
+        });
+
         it('should call callback at once if got []', () => {
             var func = () => {};
             var callback = sinon.spy();
             flow.map(([]), func, callback);
             expect(callback.calledOnce).to.be.true;
-            expect(callback).to.be.calledWith(null, []);
+            expect(callback).to.be.calledWith(undefined, []);
         });
 
         it('should call callback at once after functions', () => {
@@ -179,10 +257,31 @@ describe('Testing flow.js', () => {
                 cb(null, data + 1);
             });
             var callback = sinon.spy((err, data) => {
-                expect(callback).to.be.calledWith(null, [2, 3]);
+                expect(callback).to.be.calledWith(undefined, [2, 3]);
             });
 
             flow.map([1, 2], func, callback);
+        });
+    });
+    describe('Tests for makeAsync function', function () {
+        it('should return a function', () => {
+            var syncFunction = () => {};
+
+            flow.makeAsync(syncFunction(1));
+            syncFunction.should.be.a('function');
+        });
+
+        it('should call callback', () => {
+            var syncFunction = (arg) => {
+                return ++arg;
+            };
+            var callback = sinon.spy((err, data) => {
+                expect(callback).to.have.been.calledOnce;
+                expect(callback).to.have.been.calledWithExactly(undefined, 1);
+            });
+
+            var asyncFunction = flow.makeAsync(syncFunction);
+            asyncFunction(0, callback);
         });
     });
 });
