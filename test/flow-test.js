@@ -45,6 +45,25 @@ describe('Testing flow.js', () => {
             func.should.have.been.calledOnce;
         });
 
+        it('should call second function twice', done => {
+            const func1 = sinon.spy(cb => {
+                setTimeout(() => cb(null, 1), 0);
+            });
+
+            const func2 = sinon.spy((data, cb) => {
+                setTimeout(() => cb(null, 2), 100);
+            });
+
+            const callback = sinon.spy((err, data) => {
+                func1.should.have.been.calledOnce;
+                func2.should.have.been.calledTwice;
+                callback.should.have.been.calledOnce;
+                done();
+            });
+
+            flow.serial([func1, func2, func2], callback);
+        });
+
         it('should call functions at once if got 2 function to do', done => {
             const func1 = sinon.spy(cb => {
                 setTimeout(cb(null, 1), 0);
