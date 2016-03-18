@@ -51,7 +51,7 @@ describe('Testing flow.js', () => {
             });
 
             const func2 = sinon.spy((data, cb) => {
-                setTimeout(() => cb(null, 2), 100);
+                setTimeout(cb, 0);
             });
 
             const callback = sinon.spy((err, data) => {
@@ -69,7 +69,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy((data, cb) => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy(() => done());
 
@@ -84,7 +84,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy((data, cb) => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb(null, 2), 0);
             });
             const callback = sinon.spy(() => done());
 
@@ -99,7 +99,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy((data, cb) => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy(() => done());
 
@@ -112,7 +112,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(new Error('err')), 0);
             });
             const func2 = sinon.spy((data, cb) => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy(() => done());
 
@@ -145,7 +145,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
@@ -164,7 +164,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb(null, 2), 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
@@ -180,7 +180,7 @@ describe('Testing flow.js', () => {
                 setTimeout(cb(new Error('err')), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 100);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledWith(new Error('err'), [undefined, 2]);
@@ -191,10 +191,10 @@ describe('Testing flow.js', () => {
 
         it('should call all functions parallel if limit bigger then count of funcs', done => {
             const func1 = sinon.spy(cb => {
-                setTimeout(cb(null, 1), 500);
+                setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb(null, 2), 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
@@ -209,10 +209,10 @@ describe('Testing flow.js', () => {
 
         it('should call functions sync if limit equal 1', done => {
             const func1 = sinon.spy(cb => {
-                setTimeout(cb(null, 1), 1000);
+                setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 500);
+                setTimeout(cb(null, 2), 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
@@ -229,10 +229,10 @@ describe('Testing flow.js', () => {
 
         it('should return [] if limit equal 0', done => {
             const func1 = sinon.spy(cb => {
-                setTimeout(cb(null, 1), 1000);
+                setTimeout(cb(null, 1), 0);
             });
             const func2 = sinon.spy(cb => {
-                setTimeout(cb(null, 2), 1000);
+                setTimeout(cb, 0);
             });
             const callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
@@ -266,9 +266,9 @@ describe('Testing flow.js', () => {
 
         it('should call callback at once after functions', done => {
             const func = sinon.spy((data, cb) => {
-                setTimeout(cb(null, data), 100);
+                setTimeout(cb, 0);
             });
-            const callback = sinon.spy((err, data) => {
+            const callback = sinon.spy(() => {
                 callback.should.have.been.calledOnce;
                 done();
             });
@@ -278,9 +278,9 @@ describe('Testing flow.js', () => {
 
         it('should apply function to each param', done => {
             const func = sinon.spy((data, cb) => {
-                setTimeout(cb(null, data + 1), 100);
+                setTimeout(cb(null, data + 1), 0);
             });
-            const callback = sinon.spy((err, data) => {
+            const callback = sinon.spy(() => {
                 callback.should.have.been.calledWith(undefined, [2, 3]);
                 done();
             });
