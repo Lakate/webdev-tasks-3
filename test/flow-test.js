@@ -6,33 +6,12 @@ const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 require('chai').use(sinonChai);
 
-function getFirstFunc() {
-    return sinon.spy(cb => {
-        setTimeout(() => cb(null, 1), 0);
-    });
-}
+function getFunc(params) {
+    params = params || {};
 
-function getSecondFunc(needParams) {
-    if (needParams) {
-        return sinon.spy((data, cb) => {
-            if (cb === undefined) {
-                cb = data;
-            }
-            setTimeout(cb(null, 2), 0);
-        });
-    } else {
-        return sinon.spy((data, cb) => {
-            if (cb === undefined) {
-                cb = data;
-            }
-            setTimeout(cb, 0);
-        });
-    }
-}
-
-function getFuncWithErr() {
-    return sinon.spy(cb => {
-        setTimeout(cb(new Error('err')), 0);
+    return sinon.spy((data, cb) => {
+        cb = cb || data;
+        setTimeout(() => cb(params.error, params.data), 0);
     });
 }
 
@@ -61,38 +40,34 @@ describe('Testing flow.js', () => {
         });
 
         it('should call callback at once if got 1 function to do', done => {
-            let func = getFirstFunc();
+            let func = getFunc({error: null, data: 1});
             let callback = sinon.spy(() => {
+                func.should.have.been.calledOnce;
                 callback.should.have.been.calledOnce;
-                callback.should.have.been.calledAfter(func);
                 callback.should.have.been.calledWith(null, 1);
                 done();
             });
 
             flow.serial([func], callback);
-            func.should.have.been.calledOnce;
         });
 
         it('should call second function twice', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(true);
+            let func = getFunc();
             let callback = sinon.spy(() => {
-                func1.should.have.been.calledOnce;
-                func2.should.have.been.calledTwice;
+                func.should.have.been.calledTwice;
                 callback.should.have.been.calledOnce;
                 done();
             });
 
-            flow.serial([func1, func2, func2], callback);
+            flow.serial([func, func], callback);
         });
 
         it('should call functions at once if got 2 function to do', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc();
+            let func2 = getFunc();
             let callback = sinon.spy(() => {
                 func1.should.have.been.calledOnce;
                 func2.should.have.been.calledOnce;
-                func2.should.have.been.calledWith(1);
                 done();
             });
 
@@ -100,8 +75,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should call callback at once if got 2 function to do', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(true);
+            let func1 = getFunc({error: null, data: 1});
+            let func2 = getFunc({error: null, data: 2});
             let callback = sinon.spy(() => {
                 callback.should.have.been.calledOnce;
                 callback.should.have.been.calledWith(null, 2);
@@ -113,8 +88,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should second function call after first function', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc();
+            let func2 = getFunc();
             let callback = sinon.spy(() => {
                 func2.should.have.been.calledAfter(func1);
                 done();
@@ -124,8 +99,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should not call 2d function call after first function, if first throw error', done => {
-            let func1 = getFuncWithErr();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc({error: new Error('err')});
+            let func2 = getFunc();
             let callback = sinon.spy(() => {
                 func1.should.have.been.calledOnce;
                 func2.should.not.have.been.called;
@@ -155,8 +130,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should call callback at once after functions', done => {
-            let func1 = getFirstFunc(1);
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc();
+            let func2 = getFunc();
             let callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
                 callback.should.have.been.calledAfter(func1);
@@ -168,11 +143,11 @@ describe('Testing flow.js', () => {
         });
 
         it('should call callback with right data array', done => {
-            let func1 = getFirstFunc(1);
-            let func2 = getSecondFunc(true);
+            let func1 = getFunc({error: null, data: 1});
+            let func2 = getFunc({error: null, data: 2});
             let callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledOnce;
-                callback.should.have.been.calledWith(undefined, [2, 1]);
+                callback.should.have.been.calledWith(undefined, [1, 2]);
                 done();
             });
 
@@ -180,8 +155,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should return error if one of functions throw err', () => {
-            let func1 = getFuncWithErr();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc({error: new Error('err')});
+            let func2 = getFunc();
             let callback = sinon.spy((err, data) => {
                 callback.should.have.been.calledWith(new Error('err'), [undefined, 2]);
             });
@@ -190,13 +165,13 @@ describe('Testing flow.js', () => {
         });
 
         it('should call all functions parallel if limit bigger then count of funcs', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(true);
+            let func1 = getFunc({error: null, data: 1});
+            let func2 = getFunc({error: null, data: 2});
             let callback = sinon.spy((err, data) => {
                 func1.should.have.been.calledOnce;
                 func2.should.have.been.calledOnce;
                 callback.should.have.been.calledOnce;
-                callback.should.have.been.calledWith(undefined, [2, 1]);
+                callback.should.have.been.calledWith(undefined, [1, 2]);
                 done();
             });
 
@@ -204,8 +179,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should call functions sync if limit equal 1', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc();
+            let func2 = getFunc();
             let callback = sinon.spy((err, data) => {
                 func1.should.have.been.calledOnce;
                 func2.should.have.been.calledOnce;
@@ -219,8 +194,8 @@ describe('Testing flow.js', () => {
         });
 
         it('should return [] if limit equal 0', done => {
-            let func1 = getFirstFunc();
-            let func2 = getSecondFunc(false);
+            let func1 = getFunc();
+            let func2 = getFunc();
             let callback = sinon.spy((err, data) => {
                 func1.should.not.have.been.called;
                 func2.should.not.have.been.called;
@@ -252,7 +227,7 @@ describe('Testing flow.js', () => {
         });
 
         it('should call callback at once after functions', done => {
-            let func = getSecondFunc(false);
+            let func = getFunc();
             let callback = sinon.spy(() => {
                 callback.should.have.been.calledOnce;
                 done();
