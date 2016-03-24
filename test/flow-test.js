@@ -269,5 +269,21 @@ describe('Testing flow.js', () => {
             let asyncFunction = flow.makeAsync(syncFunction);
             asyncFunction(0, callback);
         });
+
+        it('should finish async func after sync', done => {
+            let func = sinon.spy(() => {});
+            let syncFunction = (arg) => {
+                return ++arg;
+            };
+            let callback = sinon.spy((err, data) => {
+                callback.should.have.been.calledAfter(func);
+                callback.should.have.been.calledWith(undefined, 1);
+                done();
+            });
+
+            let asyncFunction = flow.makeAsync(syncFunction);
+            asyncFunction(0, callback);
+            func();
+        });
     });
 });
